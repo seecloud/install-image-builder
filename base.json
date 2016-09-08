@@ -1,0 +1,72 @@
+{
+  "variables": {
+    "iso": "/tmp/ubuntu-14.04.4-server-amd64.iso",
+    "preseed": "config/custom.seed"
+  },
+  "builders": [
+    {
+      "type": "qemu",
+      "qemuargs": [
+         [ "-m", "2048M" ],
+         [ "-netdev", "user,hostfwd=tcp::{{ .SSHHostPort }}-:22,id=forward"],
+         [ "-device", "virtio-net,netdev=forward,id=net0"]
+      ],
+      "boot_command": [
+        "<esc><wait>",
+        "<esc><wait>",
+        "<enter><wait>",
+        "/install/vmlinuz",
+        " auto",
+        " console-setup/ask_detect=false",
+        " console-setup/layoutcode=us",
+        " console-setup/modelcode=pc105",
+        " debconf/frontend=noninteractive",
+        " debian-installer=en_US",
+        " fb=false",
+        " initrd=/install/initrd.gz",
+        " kbd-chooser/method=us",
+        " keyboard-configuration/layout=USA",
+        " keyboard-configuration/variant=USA",
+        " locale=en_US",
+        " netcfg/get_hostname=base",
+        " netcfg/get_domain=mirantis.local",
+        " netcfg/choose_interface=eth0",
+        " noapic",
+        " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg",
+        " -- ",
+        "<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": 40960,
+      "format": "qcow2",
+      "http_directory": "http",
+      "headless": "true",
+      "iso_checksum": "2ac1f3e0de626e54d05065d6f549fa3a",
+      "iso_checksum_type": "md5",
+      "iso_url": "file://{{user `iso`}}",
+      "ssh_username": "mirantis",
+      "ssh_password": "mirantis",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'mirantis'|sudo -S sh '/tmp/shutdown.sh'",
+      "vm_name": "base"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "config",
+      "destination": "/home/mirantis"
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo 'mirantis' | {{ .Vars }} sudo -ES bash '{{ .Path }}'",
+      "environment_vars": [
+        "PRESEED={{user `preseed`}}"
+      ],
+      "scripts": [
+        "scripts/packages.sh"
+      ]
+    }
+  ]
+}
