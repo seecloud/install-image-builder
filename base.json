@@ -1,7 +1,13 @@
 {
   "variables": {
     "iso": "/tmp/ubuntu-14.04.4-server-amd64.iso",
-    "preseed": "config/custom.seed"
+    "iso_md5": "2ac1f3e0de626e54d05065d6f549fa3a",
+    "preseed": "config/custom.seed",
+    "gpg_pubring": "/tmp/.gnupg/pubring.gpg",
+    "gpg_secring": "/tmp/.gnupg/secring.gpg",
+    "gpg_uid": "Mirantis",
+    "packages": "docker-engine ansible nginx git",
+    "dst_iso": "/tmp/image.iso"
   },
   "builders": [
     {
@@ -41,7 +47,7 @@
       "format": "qcow2",
       "http_directory": "http",
       "headless": "true",
-      "iso_checksum": "2ac1f3e0de626e54d05065d6f549fa3a",
+      "iso_checksum": "{{user `iso_md5`}}",
       "iso_checksum_type": "md5",
       "iso_url": "file://{{user `iso`}}",
       "ssh_username": "mirantis",
@@ -59,14 +65,42 @@
       "destination": "/home/mirantis"
     },
     {
+      "type": "file",
+      "source": "{{user `preseed`}}",
+      "destination": "/home/mirantis/preseed.cfg"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "mkdir -m 700 /home/mirantis/.gnupg"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "{{user `gpg_pubring`}}",
+      "destination": "/home/mirantis/.gnupg/pubring.gpg"
+    },
+    {
+      "type": "file",
+      "source": "{{user `gpg_secring`}}",
+      "destination": "/home/mirantis/.gnupg/secring.gpg"
+    },
+    {
       "type": "shell",
       "execute_command": "echo 'mirantis' | {{ .Vars }} sudo -ES bash '{{ .Path }}'",
       "environment_vars": [
-        "PRESEED={{user `preseed`}}"
+        "GPG_UID={{user `gpg_uid`}}",
+        "PACKAGES={{user `packages`}}"
       ],
       "scripts": [
-        "scripts/packages.sh"
+        "scripts/image.sh"
       ]
+    },
+    {
+      "type": "file",
+      "source": "/home/mirantis/image.iso",
+      "destination": "{{user `dst_iso`}}",
+      "direction": "download"
     }
   ]
 }

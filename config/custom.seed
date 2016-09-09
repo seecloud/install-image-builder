@@ -18,6 +18,18 @@ d-i	grub-installer/timeout	string 2
 oem-config	oem-config/steps	multiselect language, timezone, keyboard, user, network, tasks
 d-i  base-installer/kernel/altmeta   string lts-wily
 
+# Policy for applying updates. May be "none" (no automatic updates),
+# "unattended-upgrades" (install security updates automatically), or
+# "landscape" (manage system with Landscape).
+d-i pkgsel/update-policy select none
+
 # Package selection
 tasksel tasksel/first multiselect minimal
-d-i pkgsel/include string acct
+d-i pkgsel/include string docker-engine ansible nginx git openssh-server
+
+# If you select ftp, the mirror/country string does not need to be set.
+#d-i mirror/protocol string ftp
+#d-i mirror/country string manual
+#d-i mirror/http/hostname string ports.ubuntu.com
+#d-i mirror/http/directory string /ubuntu
+d-i mirror/http/proxy string

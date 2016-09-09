@@ -1,44 +1,67 @@
 #!/usr/bin/env bash
 
-readonly PRESEED DISTRO_DIR="$(mktemp -d)" DISTRO_CN="$(lsb_release -cs)"
+readonly GPG_UID PACKAGES \
+  DISTRO_DIR="$(mktemp -d)" DISTRO_CN="$(lsb_release -cs)"
 
-inject_preseed() {
-  cp -f "${PRESEED}" "${DISTRO_DIR}/preseed/"
+config_preseed() {
+  cp -f "${HOME}/preseed.cfg" "${DISTRO_DIR}/preseed/"
+
+  cat > "${DISTRO_DIR}/isolinux/txt1.cfg" << EOF
+default mms
+label mms
+  menu label ^Install MMS version of Ubuntu Server
+  kernel /install/vmlinuz
+  append  file=/cdrom/preseed/preseed.cfg vga=788 initrd=/install/initrd.gz quiet --
+label check
+  menu label ^Check disc for defects
+  kernel /install/vmlinuz
+  append   MENU=/bin/cdrom-checker-menu vga=788 initrd=/install/initrd.gz quiet --
+label memtest
+  menu label Test ^memory
+  kernel /install/mt86plus
+label hd
+  menu label ^Boot from first hard disk
+  localboot 0x80"
+EOF
+  sed 's/ txt.cfg/ txt1.cfg/' -i "${DISTRO_DIR}/isolinux/menu.cfg"
 }
 
-create_repo() {
-  local -r packages='docker-engine ansible' tmp_dir="$(mktemp -d)"
+add_packages() {
+  local -r tmp_dir="$(mktemp -d)"
 
   apt-cdrom -m -d=/media/cdrom add
 
-  # Add Docker's APT repository
-  local -r repo='deb http://apt.dockerproject.org/repo ubuntu-trusty main'
-  echo "${repo}" > /etc/apt/sources.list.d/docker.list
+  echo "deb http://apt.dockerproject.org/repo ubuntu-${DISTRO_CN} main" > \
+    /etc/apt/sources.list.d/docker.list
   apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 \
     --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
   apt-get clean
   apt-get update
-  apt-get -qq --print-uris install ${packages} | \
+
+  apt-get -qq --print-uris install ${PACKAGES} | \
     grep -v 'cdrom:\[' | \
     cut -d ' ' -f 1 | \
-    sed -r "s/(^'|'$)//g" > /tmp/packages.txt
-  wget -q -P "${tmp_dir}" -i /tmp/packages.txt
+    sed -r "s/(^'|'$)//g" | \
+    wget -q -P "${tmp_dir}" -i -
 
   apt-get -y install reprepro fakeroot dpkg-dev squashfs-tools
 
-  mkdir "${HOME}/.gnupg"
-  cp -rf "${HOME}"/config/gnupg/* "${HOME}/.gnupg"
+  sed '/^SignWith:/d' -i "${HOME}/config/reprepro/conf/distributions"
+  echo "SignWith: ${GPG_UID}" >> "${HOME}/config/reprepro/conf/distributions"
   cp -rf "${HOME}"/config/reprepro/* "${DISTRO_DIR}"
+
   rm -rf "${DISTRO_DIR}/dists/${DISTRO_CN}"
 
   for pkg in deb udeb; do
     find "${DISTRO_DIR}/pool" -type f -name "*\.${pkg}" -execdir reprepro \
+      -s \
       -b "${DISTRO_DIR}" \
       "include${pkg}" \
      "${DISTRO_CN}" {} \;
     find "${tmp_dir}" -type f -name "*\.${pkg}" -execdir reprepro \
       -C extras \
+      -s \
       -b "${DISTRO_DIR}" \
       "include${pkg}" \
      "${DISTRO_CN}" {} \;
@@ -49,12 +72,12 @@ create_repo() {
   pushd ubuntu-keyring-*
   gpg --import < keyrings/ubuntu-archive-keyring.gpg
   gpg --yes --output=keyrings/ubuntu-archive-keyring.gpg \
-    --export "Ubuntu" "Mirantis"
-  dpkg-buildpackage -rfakeroot -m"Mirantis"
+    --export 'Ubuntu' "${GPG_UID}"
+  dpkg-buildpackage -rfakeroot -m"${GPG_UID}"
   cp -f keyrings/ubuntu-archive-keyring.gpg "${tmp_dir}"
   popd
-  reprepro -b "${DISTRO_DIR}" remove "${DISTRO_CN}" ubuntu-keyring-udeb
-  reprepro -b "${DISTRO_DIR}" includeudeb "${DISTRO_CN}" \
+  reprepro -s -b "${DISTRO_DIR}" remove "${DISTRO_CN}" ubuntu-keyring-udeb
+  reprepro -s -b "${DISTRO_DIR}" includeudeb "${DISTRO_CN}" \
     ubuntu-keyring-udeb*.udeb
 
   unsquashfs -n "${DISTRO_DIR}/install/filesystem.squashfs"
@@ -66,8 +89,11 @@ create_repo() {
     squashfs-root/var/lib/apt/keyrings/ubuntu-archive-keyring.gpg
   du -sx --block-size=1 squashfs-root/ | \
     cut -f 1 > "${DISTRO_DIR}/install/filesystem.size"
+  rm -f "${DISTRO_DIR}/install/filesystem.squashfs"
   mksquashfs squashfs-root/ "${DISTRO_DIR}/install/filesystem.squashfs"
   popd
+
+  rm -rf "${DISTRO_DIR}/"{conf,db}
 
   find "${DISTRO_DIR}/" -type f -print0 | \
     xargs -0 md5sum > "${DISTRO_DIR}/md5sum.txt"
@@ -91,30 +117,19 @@ create_iso() {
    "${DISTRO_DIR}"
 }
 
-mount /dev/cdrom /media/cdrom
-cp -rT /media/cdrom/ "${DISTRO_DIR}"
+main() {
+  mount /dev/cdrom /media/cdrom
+  cp -rT /media/cdrom/ "${DISTRO_DIR}"
 
-#apt-cdrom -m -d=/media/cdrom add
+  [[ -f "${HOME}/preseed.cfg" ]] && config_preseed
+  [[ -n "${GPG_UID}" &&
+    -n "${PACKAGES}" &&
+    -f "${HOME}/.gnupg/pubring.gpg" &&
+    -f "${HOME}/.gnupg/secring.gpg" ]] && add_packages
 
-# Add Docker's APT repository
-#repo='deb http://apt.dockerproject.org/repo ubuntu-trusty main'
-#echo "${repo}" > /etc/apt/sources.list.d/docker.list
-#apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 \
-#  --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+  create_iso
+}
 
-#apt-get clean
-#apt-get update
+main "$@"
 
-#packages='docker-engine ansible'
-
-#apt-get -qq --print-uris install ${packages} | \
-#  grep -v 'cdrom:\[' | \
-#  cut -d ' ' -f 1 | \
-#  sed -r "s/(^'|'$)//g" > /tmp/packages.txt
-
-[[ -n "${PRESEED}" ]] && inject_preseed
-create_repo
-create_iso
-
-
-sleep 18000
+#sleep 18000
