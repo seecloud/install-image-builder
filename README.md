@@ -1,1 +1,1 @@
-# install-image-builder
+# os-image-builder
