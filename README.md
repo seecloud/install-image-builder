@@ -36,9 +36,9 @@ Open base.json in your favorite text editor and find `variables` section at the 
  * `preseed`: specifies a file system path to a custom preseed file to be used for the installation (`config/custom.seed` is used by default)
  * `gpg_pubring`: path to pubring.gpg file
  * `gpg_secring`: path to secring.gpg file
- * `gpg_uid`: user id of you key (`gpg -k` command can be used to retrieve it)
+ * `gpg_uid`: user id of your key (`gpg -k` command can be used to retrieve it)
  * `packages`: a list of extra packages to be included into the pool structure of your target image (note that these packages won't be installed unless you specify them in a custom preseed file too)
- * `dst_iso`: specifies a file system path to the target image
+ * `dst_iso`: specifies a file system path to the target ISO image
 
 ##Usage
 
