@@ -30,7 +30,7 @@ Follow the prompts to specify your name, email, and other items.
 
 Make sure you can find pubring.gpg and secring.gpg files under $HOME/.gnupg directory. Also, you should be to see your newly generated keys by issuing `gpg -k` and `gpg -K` commands to list keys from the public and secret keyrings accordingly.
 
-Open base.json in your favorite text editor and find `variables` section at the top of the file, you may need to modify some parameters there. The following parameters are available:
+Open `base.json` in your favorite text editor and find `variables` section at the top of the file, you may need to modify some parameters there. The following parameters are available:
  * `iso`: specifies a file system path to the official Ubuntu installation CD image
  * `iso_md5`: MD5 hash of the installation CD image
  * `preseed`: specifies a file system path to a custom preseed file to be used for the installation (`config/custom.seed` is used by default)
