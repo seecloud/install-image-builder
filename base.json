@@ -6,7 +6,7 @@
     "gpg_pubring": "/tmp/.gnupg/pubring.gpg",
     "gpg_secring": "/tmp/.gnupg/secring.gpg",
     "gpg_uid": "Mirantis",
-    "packages": "docker-engine ansible nginx git",
+    "packages": "docker-engine ansible nginx git mc",
     "dst_iso": "/tmp/image.iso"
   },
   "builders": [
