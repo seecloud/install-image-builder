@@ -39,4 +39,4 @@ d-i mirror/http/proxy string
 # directly, or use the apt-install and in-target commands to easily install
 # packages and run commands in the target system.
 # d-i preseed/late_command string [command]
-d-i preseed/late_command string in-target pip install docker-py -i file:///media/cdrom/pypi/simple
+d-i preseed/late_command string in-target pip install -i file:///media/cdrom/pypi/simple docker-py
