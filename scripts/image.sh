@@ -50,7 +50,7 @@ add_packages() {
     sed -r "s/(^'|'$)//g" | \
     wget -q -P "${tmp_dir}" -i -
 
-  # Download required python packages and create a PyPI repository
+  # Download required Python packages and create a PyPI repository
   apt-get -y install python-pip
   mkdir -p "${pypi_dir}"
   for py_package in ${PY_PACKAGES}; do
@@ -110,7 +110,7 @@ add_packages() {
   rm -rf "${DISTRO_DIR}/"{conf,db}
 
   pushd "${DISTRO_DIR}"
-  find "." -type f -print0 | xargs -0 md5sum > "md5sum.txt"
+  find "." -type f -print0 | xargs -0 md5sum > md5sum.txt
   popd
 }
 
