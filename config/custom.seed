@@ -25,7 +25,7 @@ d-i pkgsel/update-policy select none
 
 # Package selection
 tasksel tasksel/first multiselect minimal
-d-i pkgsel/include string docker-engine ansible nginx git openssh-server mc curl
+d-i pkgsel/include string python-pip docker-engine ansible nginx git openssh-server mc curl
 
 # If you select ftp, the mirror/country string does not need to be set.
 #d-i mirror/protocol string ftp
@@ -33,3 +33,10 @@ d-i pkgsel/include string docker-engine ansible nginx git openssh-server mc curl
 #d-i mirror/http/hostname string ports.ubuntu.com
 #d-i mirror/http/directory string /ubuntu
 d-i mirror/http/proxy string
+
+# This command is run just before the install finishes, but when there is
+# still a usable /target directory. You can chroot to /target and use it
+# directly, or use the apt-install and in-target commands to easily install
+# packages and run commands in the target system.
+# d-i preseed/late_command string [command]
+d-i preseed/late_command string in-target pip install docker-py -i file:///media/cdrom/pypi/simple

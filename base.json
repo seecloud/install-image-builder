@@ -6,7 +6,8 @@
     "gpg_pubring": "/tmp/.gnupg/pubring.gpg",
     "gpg_secring": "/tmp/.gnupg/secring.gpg",
     "gpg_uid": "Mirantis",
-    "packages": "docker-engine ansible nginx git mc",
+    "deb_packages": "docker-engine ansible nginx git mc",
+    "py_packages": "docker-py==1.10.2",
     "dst_iso": "/tmp/image.iso"
   },
   "builders": [
@@ -90,7 +91,8 @@
       "execute_command": "echo 'mirantis' | {{ .Vars }} sudo -ES bash '{{ .Path }}'",
       "environment_vars": [
         "GPG_UID={{user `gpg_uid`}}",
-        "PACKAGES={{user `packages`}}"
+        "DEB_PACKAGES={{user `deb_packages`}}",
+        "PY_PACKAGES={{user `py_packages`}}"
       ],
       "scripts": [
         "scripts/image.sh"

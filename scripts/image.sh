@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-readonly GPG_UID PACKAGES \
+readonly GPG_UID DEB_PACKAGES PY_PACKAGES \
   DISTRO_DIR="$(mktemp -d)" DISTRO_CN="$(lsb_release -cs)"
 
 config_preseed() {
@@ -27,7 +27,7 @@ EOF
 }
 
 add_packages() {
-  local -r tmp_dir="$(mktemp -d)"
+  local -r tmp_dir="$(mktemp -d)" pypi_dir="${DISTRO_DIR}/pypi"
 
   apt-cdrom -m -d=/media/cdrom add
 
@@ -43,11 +43,21 @@ add_packages() {
   apt-get clean
   apt-get update
 
-  apt-get -qq --print-uris install ${PACKAGES} | \
+  # Download required deb packages
+  apt-get -qq --print-uris install ${DEB_PACKAGES} | \
     grep -v 'cdrom:\[' | \
     cut -d ' ' -f 1 | \
     sed -r "s/(^'|'$)//g" | \
     wget -q -P "${tmp_dir}" -i -
+
+  # Download required python packages and create a PyPI repository
+  apt-get -y install python-pip
+  mkdir -p "${pypi_dir}"
+  for py_package in ${PY_PACKAGES}; do
+    pip install --download="${pypi_dir}" "${py_package}"
+  done
+  pip install pip2pi
+  dir2pi "${pypi_dir}"
 
   apt-get -y install reprepro fakeroot dpkg-dev squashfs-tools
 
@@ -127,7 +137,8 @@ main() {
 
   [[ -f "${HOME}/preseed.cfg" ]] && config_preseed
   [[ -n "${GPG_UID}" &&
-    -n "${PACKAGES}" &&
+    -n "${DEB_PACKAGES}" &&
+    -n "${PY_PACKAGES}" &&
     -f "${HOME}/.gnupg/pubring.gpg" &&
     -f "${HOME}/.gnupg/secring.gpg" ]] && add_packages
 
