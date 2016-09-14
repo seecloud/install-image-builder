@@ -37,7 +37,8 @@ Open `base.json` in your favorite text editor and find `variables` section at th
  * `gpg_pubring`: path to pubring.gpg file
  * `gpg_secring`: path to secring.gpg file
  * `gpg_uid`: user id of your key (`gpg -k` command can be used to retrieve it)
- * `packages`: a list of extra packages to be included into the pool structure of your target image (note that these packages won't be installed unless you specify them in a custom preseed file too)
+ * `deb_packages`: a list of extra deb packages to be included into the pool structure of your target image (note that these packages won't be installed unless you specify them in a custom preseed file too)
+ * `py_packages`: a list of Python packages to be included into the PyPI repository on the target image  (note that these packages won't be installed unless you specify them in `d-i preseed/late_command` of your custom preseed file)
  * `dst_iso`: specifies a file system path to the target ISO image
 
 ##Usage
