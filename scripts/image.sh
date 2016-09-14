@@ -109,8 +109,9 @@ add_packages() {
 
   rm -rf "${DISTRO_DIR}/"{conf,db}
 
-  find "${DISTRO_DIR}/" -type f -print0 | \
-    xargs -0 md5sum > "${DISTRO_DIR}/md5sum.txt"
+  pushd "${DISTRO_DIR}"
+  find "." -type f -print0 | xargs -0 md5sum > "md5sum.txt"
+  popd
 }
 
 create_iso() {
