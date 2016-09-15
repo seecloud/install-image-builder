@@ -25,7 +25,7 @@ d-i pkgsel/update-policy select none
 
 # Package selection
 tasksel tasksel/first multiselect minimal
-d-i pkgsel/include string python-pip docker-engine ansible nginx git openssh-server mc curl
+d-i pkgsel/include string python-pip vim docker-engine ansible nginx git openssh-server mc curl
 
 # If you select ftp, the mirror/country string does not need to be set.
 #d-i mirror/protocol string ftp
