@@ -3,11 +3,24 @@
 readonly RPM_PACKAGES PY_PACKAGES \
   DISTRO_DIR="$(mktemp -d)"
 
+# update yum cache
+function yum_update_cache()
+{
+  local yum_config
+  local disable_fastmirror
+  yum_config=${1:-"/etc/yum.conf"}
+  disable_fastmirror=${2:-""}
+  if [ "${disable_fastmirror}" == "1" ]; then
+    disable_fastmirror="--disableplugin=fastestmirror"
+  fi
+  yum -c ${yum_config} clean all
+  yum -c ${yum_config} ${disable_fastmirror} makecache
+}
 # prepare
 function mkprep()
 {
   yum install -y epel-release
-  yum makecache
+  yum_update_cache
   rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
   yum install -y createrepo yum-utils genisoimage rsync
 }
@@ -27,8 +40,6 @@ function cp_iso_data()
   rsync -av ${cdpath}/images/ ${destination}/images/ || exit $?
   # copy gpg keys
   find ${cdpath} -name "*GPG-KEY*" -exec cp {} ${destination}/ \;
-  rsync -av "${cdpath}/Packages/" "${destination}/Packages/" || exit $?
-  cp -r ${cdpath}/repodata ${destination}/ || exit $?
   compsfile=$(find "${cdpath}/repodata/" -name "*comps.xml.gz" | head -n1)
   if [ -f ${compsfile} ]; then
     gunzip ${compsfile} -c > "${destination}/comps.xml"
@@ -140,27 +151,41 @@ enabled=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
 EOF
 
-  # populating from iso
+  # populating with initital data from iso
   cp_iso_data ${builddir}
   # gen yum cache
   yum-config-manager --enable c7-media > /dev/null
-  yum-config-manager --disable updates > /dev/null
   yum repolist
-  # yum -c ${DISTRO_DIR}/yum.conf --enablerepo="base,epel,extras,updates"  makecache
-  yum -c ${tmp_yumroot}/yum.conf --disableplugin=fastestmirror makecache
+  yum-config-manager --enable updates > /dev/null
+  rm -f /etc/yum.repos.d/downloaded.repo
+  yum_update_cache ${tmp_yumroot}/yum.conf
   # downloading updated packages
-  repotrack -c ${tmp_yumroot}/yum.conf -a x86_64 -r base -r extras -r epel -p ${tmp_downloaded_packages} ${RPM_PACKAGES} || exit $?
-  rsync -av "${tmp_downloaded_packages}/" "${tmp_downloaded_repo}/Packages/"
+  repotrack -c ${tmp_yumroot}/yum.conf -a x86_64 -r base -r extras -r epel -r updates -p ${tmp_downloaded_packages} ${RPM_PACKAGES} || exit $?
+  # clean 32 bit packages
+  rm -f ${tmp_downloaded_packages}/*.i686.rpm
+  rsync -avlp "${tmp_downloaded_packages}/" "${tmp_downloaded_repo}/Packages/"
+  mkrepo ${tmp_downloaded_repo}
+  # updating & checking temporary repo
+  yum_update_cache ${tmp_yumroot}/yum2.conf
+  repoclosure -c ${tmp_yumroot}/yum2.conf -r downloaded -r cdrom || exit $?
+# UPDATING BASE PACKAGE LIST FROM CDROM
+  # add deownloaded into default repos
+  cp -f ${tmp_yumrepos_updates}/downloaded.repo /etc/yum.repos.d/
+  # update for packages from installation media
+  yum_update_cache ${tmp_yumroot}/yum.conf
+  repotrack -c ${tmp_yumroot}/yum.conf -a x86_64 -r base -r updates -p ${tmp_downloaded_packages} $(repoquery --disablerepo=* --enablerepo=c7-media --qf='%{NAME}' '*') || exit $?
+  # clean 32 bit packages
+  rm -f ${tmp_downloaded_packages}/*.i686.rpm
+  # updating & checking temporary repo
+  rsync -avlp "${tmp_downloaded_packages}/" "${tmp_downloaded_repo}/Packages/"
   mkrepo ${tmp_downloaded_repo}
   # updaing temp
-  yum -c ${tmp_yumroot}/yum2.conf --disableplugin=fastestmirror makecache
+  yum_update_cache ${tmp_yumroot}/yum2.conf
   repoclosure -c ${tmp_yumroot}/yum2.conf -r downloaded -r cdrom || exit $?
-  # add packages into future repo
-  rsync -av "${tmp_downloaded_packages}/" "${builddir}/Packages/" || exit $?
+  # add packages into future ISO repo
+  rsync -avlp "${tmp_downloaded_packages}/" "${builddir}/Packages/" || exit $?
   mkrepo "${builddir}" "-g ${builddir}/comps.xml"
-  #cp -r "${tmp_downloaded_repo}" "${builddir}/"
-  #mkrepo "${builddir}" "-u \"media://$(head -1 ${builddir}/.discinfo)\" -g ${builddir}/comps.xml"
-
+  yum-config-manager --disable downloaded > /dev/null
   # creating kickstart
   cat <<EOF > "${builddir}/ks/ks.cfg"
 auth --enableshadow --passalgo=sha512
@@ -225,11 +250,9 @@ EOF
   ${builddir}/isolinux.cfg
   # generating iso
   mkisofs -o "/tmp/centos.iso" -b isolinux.bin -c boot.cat -no-emul-boot -V 'CentOS 7 x86_64' -boot-load-size 4 -boot-info-table -R -J -v -T "${builddir}/" | tee /tmp/mkisofs.log
-  #
-  yum-config-manager --enable updates > /dev/null
+  # cleanup
+  rm -rf $DISTRO_DIR
 }
-
+#
 mkprep
 main
-
-#rm -rf $DISTRO_DIR
