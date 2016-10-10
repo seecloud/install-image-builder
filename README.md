@@ -48,7 +48,11 @@ Simply run `packer build base.json` command from the project directory and wait 
 
 For Mac OS:
 
-brew install packer
-packer build -only virtualbox-iso centos7_gluster.json
+~~~
+$ brew install packer
+~~~
+~~~
+$ packer build -only virtualbox-iso centos7_gluster.json
+~~~
 (virtualbox shouols be installed)
 
