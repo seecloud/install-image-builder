@@ -39,6 +39,35 @@
       "ssh_password": "{{user `password`}}",
       "ssh_wait_timeout": "10m",
       "shutdown_command": "sudo systemctl poweroff"
+    },
+    {
+      "vm_name": "centos-7.2-x86_64-server",
+      "type": "qemu",
+      "format": "qcow2",
+      "accelerator": "kvm",
+      "disk_size": "{{ user `disk_size`}}",
+
+      "iso_url": "file://{{user `iso`}}",
+      "iso_checksum": "{{user `iso_md5`}}",
+      "iso_checksum_type": "md5",
+      "output_directory": "output-centos-7.2-x86_64-{{build_type}}",
+      "http_directory": "http",
+      "headless": "true",
+
+      "boot_wait": "5s",
+      "qemuargs": [ "-serial", "file:serial.out" ],
+      "boot_command": [
+        "<esc>",
+        "<wait>",
+        "linux inst.ks=http://{{.HTTPIP}}:{{.HTTPPort}}/ks.cfg biosdevname=0 net.ifnames=0 ",
+        "console=tty0 console=ttyS0,19200n8",
+        "<enter>"
+      ],
+
+      "ssh_username": "{{user `user`}}",
+      "ssh_password": "{{user `password`}}",
+      "ssh_wait_timeout": "10m",
+      "shutdown_command": "sudo systemctl poweroff"
     }
   ],
   "provisioners": [
