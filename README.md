@@ -46,4 +46,13 @@ Open `base.json` in your favorite text editor and find `variables` section at th
 Simply run `packer build base.json` command from the project directory and wait until it's done.
 
 
+For Mac OS:
+
+~~~
+$ brew install packer
+~~~
+~~~
+$ packer build -only virtualbox-iso centos7_gluster.json
+~~~
+(virtualbox shouols be installed)
 
