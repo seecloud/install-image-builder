@@ -8,15 +8,17 @@
 
 ##Overview
 
-os-image-builder creates OS installation ISO image based on Ubuntu CD for offline installation of Managed Services appliances.
+os-image-builder creates OS installation ISO image based on Ubuntu CD/CentOS 7 CD  
+for offline installation of Managed Services appliances.
 
 ##Requirements
 
-The image builder is known to work on Ubuntu, so it is suggested to use this distribution on your build host.
+The image builder is known to work on Ubuntu and Mac OS X, so it is suggested to use this distribution on your build host.
 You also need to download and install the following tools:
  * Packer image building tool (https://www.packer.io/docs/installation.html)
- * GnuPG (sudo apt-get install gnupg)
- * QEMU machine emulator and virtualizer (sudo apt-get install qemu-system-x86)
+ * GnuPG
+ * QEMU machine emulator and virtualizer for Linux
+ * Virtual Box for MAC OS X
  
 ##Configuration
 
@@ -30,6 +32,7 @@ Follow the prompts to specify your name, email, and other items.
 
 Make sure you can find pubring.gpg and secring.gpg files under $HOME/.gnupg directory. Also, you should be to see your newly generated keys by issuing `gpg -k` and `gpg -K` commands to list keys from the public and secret keyrings accordingly.
 
+## Ubuntu-base image
 Open `base.json` in your favorite text editor and find `variables` section at the top of the file, you may need to modify some parameters there. The following parameters are available:
  * `iso`: specifies a file system path to the official Ubuntu installation CD image
  * `iso_md5`: MD5 hash of the installation CD image
@@ -41,7 +44,18 @@ Open `base.json` in your favorite text editor and find `variables` section at th
  * `py_packages`: a list of Python packages to be included into the PyPI repository on the target image  (note that these packages won't be installed unless you specify them in `d-i preseed/late_command` of your custom preseed file)
  * `dst_iso`: specifies a file system path to the target ISO image
 
+
+## CentOS7 based image
+Open `centos7_gluster.json` in your favorite text editor and find `variables` section at the top of the file, you may need to modify some parameters there. The following parameters are available:
+ * `iso`: specifies a file system path to the official CentOS  installation CD image
+ * `iso_md5`: MD5 hash of the installation CD image
+ * `rpm_packages`: a list of extra rpm  packages to be included into the repo  on  your target image and will be installed
+ * `py_packages`: a list of Python packages to be included into the PyPI repository on the target image  (note that these packages won't be installed unless you specify them in `d-i preseed/late_command` of your custom preseed file)
+ * `dst_iso`: specifies a file system path to the target ISO image
+
+
 ##Usage
+
 
 Simply run `packer build base.json` command from the project directory and wait until it's done.
 
@@ -54,5 +68,4 @@ $ brew install packer
 ~~~
 $ packer build -only virtualbox-iso centos7_gluster.json
 ~~~
-(virtualbox shouols be installed)
 
