@@ -1,0 +1,63 @@
+{
+  "variables": {
+    "iso": "/Users/sirmax/os-image-builder/CentOS-7-x86_64-Minimal-1511.iso",
+    "iso_md5": "88c0437f0a14c6e2c94426df9d43cd67",
+    "ksfile": "config/custom.ks",
+    "rpm_packages": "python-pip docker-latest ansible nginx git mc python-docker-py vim-enhanced tcpdump mlocate glusterfs glusterfs-api glusterfs-cli glusterfs-client-xlators glusterfs-fuse glusterfs-libs glusterfs-server keepalived python-gluster",
+    
+    
+    "dst_iso": "/tmp/image.iso",
+    "disk_size": "20480",
+    "user": "mirantis",
+    "password": "mirantis"
+  },
+  "builders":
+  [
+    {
+      "vm_name": "centos-7.2-x86_64-server",
+      "type": "virtualbox-iso",
+      "format": "ovf",
+      "disk_size": "{{ user `disk_size`}}",
+      "guest_os_type": "RedHat_64",
+      "iso_url": "file://{{user `iso`}}",
+      "iso_checksum": "{{user `iso_md5`}}",
+      "iso_checksum_type": "md5",
+      "output_directory": "output-centos-7.2-x86_64-{{build_type}}",
+      "http_directory": "http",
+      "headless": "true",
+
+      "boot_wait": "5s",
+      "boot_command": [
+        "<esc>",
+        "<wait>",
+        "linux inst.ks=http://{{.HTTPIP}}:{{.HTTPPort}}/ks.cfg biosdevname=0 net.ifnames=0 ",
+        "console=tty0 console=ttyS0,19200n8",
+        "<enter>"
+      ],
+
+      "ssh_username": "{{user `user`}}",
+      "ssh_password": "{{user `password`}}",
+      "ssh_wait_timeout": "10m",
+      "shutdown_command": "sudo systemctl poweroff"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "execute_command": "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "environment_vars": [
+        "GPG_UID={{user `gpg_uid`}}",
+        "RPM_PACKAGES={{user `rpm_packages`}}"
+      ],
+      "scripts": [
+        "scripts/image2_gluster.sh"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "/tmp/centos.iso",
+      "destination": "{{user `dst_iso`}}",
+      "direction": "download"
+    }
+  ]
+}
