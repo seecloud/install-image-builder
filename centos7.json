@@ -3,7 +3,7 @@
     "iso": "/home/vstoiko/Downloads/CentOS-7-x86_64-Minimal-1511.iso",
     "iso_md5": "88c0437f0a14c6e2c94426df9d43cd67",
     "ksfile": "config/custom.ks",
-    "rpm_packages": "python-pip docker-latest ansible nginx git mc python-docker-py vim-enhanced tcpdump mlocate glusterfs glusterfs-api glusterfs-cli glusterfs-client-xlators glusterfs-fuse glusterfs-libs glusterfs-server keepalived python-gluster",
+    "rpm_packages": "python-pip docker-latest ansible nginx git mc python-docker-py vim-enhanced tcpdump mlocate glusterfs glusterfs-api glusterfs-cli glusterfs-client-xlators glusterfs-fuse glusterfs-libs glusterfs-server keepalived python-gluster bash-completion socat libselinux-python python-httplib2 wget device-mapper-libs policycoreutils-python python-IPy setools-libs",
     
     
     "dst_iso": "/tmp/image.iso",
