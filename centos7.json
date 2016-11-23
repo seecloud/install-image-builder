@@ -43,6 +43,7 @@
       "vm_name": "centos-7.2-x86_64-server",
       "type": "qemu",
       "format": "qcow2",
+      "disk_cache": "unsafe",
       "accelerator": "kvm",
       "disk_size": "{{ user `disk_size`}}",
 
